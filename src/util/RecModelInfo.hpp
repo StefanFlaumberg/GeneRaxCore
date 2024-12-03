@@ -1,47 +1,55 @@
 #pragma once
 
-#include <util/enums.hpp>
-#include <maths/Parameters.hpp>
+#include "enums.hpp"
 #include <IO/ArgumentsHelper.hpp>
+#include <maths/Parameters.hpp>
+
+
 
 struct RecModelInfo {
   // reconciliation model (UndatedDTL, UndatedDL, etc)
   RecModel model;
-  // optimizer for rate optimization (Gradient, Simplex, etc.)
+  // optimizer for rate optimization (Gradient, LBFGSB, etc)
   RecOpt recOpt;
   // if set to true, each family can have different set of rates
   bool perFamilyRates;
   // number of gamma categories for rate heterogeneity among families
   size_t gammaCategories;
-
   // at which ancestral species do we consider that originations
-  // are possible, and with which probability
+  // are possible and with which probability
   OriginationStrategy originationStrategy;
-  
-  // if set to true,  for each family, we prune from the species
-  // tree the taxa that are not covered in this family
+  // if set to true, for each family we prune from the species
+  // tree the taxa not covered by this family
   bool pruneSpeciesTree;
+  // if set to true, the reconciliation likelihood is calculated
+  // as sum over the gene tree root ML position and its neighbouring
+  // positions (specific to GeneRax)
   bool rootedGeneTree;
+  // if set to true, only the gene root position from the starting
+  // gene tree is considered (specific to GeneRax)
   bool forceGeneTreeRoot;
+  // if set to true, different gene root positions are weighted
+  // according to their MAD scores (specific to GeneRax)
   bool madRooting;
-  // if the reconciliaiton model accounts for polytomies, branches
-  // with a lenghts <= branchLengthThreshold are be contracted
+  // if the reconciliation model accounts for polytomies, branches
+  // with lengths <= branchLengthThreshold will be contracted
   double branchLengthThreshold;
- 
+  // horizontal gene transfer constraint
   TransferConstaint transferConstraint;
-  
   // disable duplications
   bool noDup;
-
-  // disableTL
-  bool noTL;
-
+  // disable DL and TL inference to speed up likelihood evaluation
+  bool noVirtualEvents;
+  // path to a file which sets for each species the probability of
+  // a gene copy to be not lost if not observed in the data
   std::string fractionMissingFile;
- 
-  // use less memory (but likelihood evaluation might be slower)
-  // some models do not implement this function
+  // use less RAM, but likelihood evaluation might be slower
+  // (specific to AleRax)
   bool memorySavings;
 
+  /**
+   *  Default constructor
+   */
   RecModelInfo():
     model(RecModel::UndatedDTL),
     recOpt(RecOpt::Gradient),
@@ -55,12 +63,13 @@ struct RecModelInfo {
     branchLengthThreshold(-1.0),
     transferConstraint(TransferConstaint::PARENTS),
     noDup(false),
-    noTL(false),
+    noVirtualEvents(false),
     memorySavings(false)
-  {
+  {}
 
-  }
-
+  /**
+   *  Constructor
+   */
   RecModelInfo(RecModel model,
       RecOpt recOpt,
       bool perFamilyRates,
@@ -73,7 +82,7 @@ struct RecModelInfo {
       double branchLengthThreshold,
       TransferConstaint transferConstraint,
       bool noDup,
-      bool noTL,
+      bool noVirtualEvents,
       const std::string &fractionMissingFile,
       bool memorySavings):
     model(model),
@@ -88,17 +97,15 @@ struct RecModelInfo {
     branchLengthThreshold(branchLengthThreshold),
     transferConstraint(transferConstraint),
     noDup(noDup),
-    noTL(noTL),
+    noVirtualEvents(noVirtualEvents),
     fractionMissingFile(fractionMissingFile),
     memorySavings(memorySavings)
-  {
-
-  }
+  {}
 
   void readFromArgv(char** argv, int &i)
   {
-    model = RecModel(atoi(argv[i++]));  
-    recOpt = RecOpt(atoi(argv[i++]));  
+    model = RecModel(atoi(argv[i++]));
+    recOpt = RecOpt(atoi(argv[i++]));
     perFamilyRates = bool(atoi(argv[i++]));
     gammaCategories = atoi(argv[i++]);
     originationStrategy = Enums::strToOrigination(argv[i++]);
@@ -106,10 +113,9 @@ struct RecModelInfo {
     rootedGeneTree = bool(atoi(argv[i++]));
     forceGeneTreeRoot = bool(atoi(argv[i++]));
     madRooting = bool(atoi(argv[i++]));
-    std::string con = argv[i++];
-    transferConstraint = ArgumentsHelper::strToTransferConstraint(con);
+    transferConstraint = ArgumentsHelper::strToTransferConstraint(argv[i++]);
     noDup = bool(atoi(argv[i++]));
-    noTL = bool(atoi(argv[i++]));
+    noVirtualEvents = bool(atoi(argv[i++]));
     branchLengthThreshold = double(atof(argv[i++]));
     fractionMissingFile = std::string(argv[i++]);
     if (fractionMissingFile == "NONE") {
@@ -132,7 +138,7 @@ struct RecModelInfo {
     argv.push_back(std::to_string(static_cast<int>(madRooting)));
     argv.push_back(ArgumentsHelper::transferConstraintToStr(transferConstraint));
     argv.push_back(std::to_string(static_cast<int>(noDup)));
-    argv.push_back(std::to_string(static_cast<int>(noTL)));
+    argv.push_back(std::to_string(static_cast<int>(noVirtualEvents)));
     argv.push_back(std::to_string(branchLengthThreshold));
     if (fractionMissingFile.size()) {
       argv.push_back(fractionMissingFile);
@@ -143,7 +149,7 @@ struct RecModelInfo {
     return argv;
   }
 
-  static int getArgc() 
+  static int getArgc()
   {
     return 15;
   }
@@ -161,11 +167,12 @@ struct RecModelInfo {
   }
 
   unsigned int modelFreeParameters() const {
-    return Enums::freeParameters(model) + (originationStrategy == OriginationStrategy::OPTIMIZE ? 1 : 0);
+    return Enums::freeParameters(model) +
+           (originationStrategy == OriginationStrategy::OPTIMIZE ? 1 : 0);
   }
- 
-  /*
-   *  Return global parameters with the appropriate 
+
+  /**
+   *  Return global parameters with the appropriate
    *  number of values (all set to 0.1)
    */
   Parameters getDefaultGlobalParameters() const {
@@ -179,11 +186,11 @@ struct RecModelInfo {
     return res;
   }
 
-  /*
-   * Takes user-define parameters and return parameters
-   * with the appropriate dimensions. If the input parameters
-   * have too many values, the last ones are discarded, and if
-   * it does not have enough values, they are completed with 0.1
+  /**
+   *  Take user-defined parameters and return parameters
+   *  with the appropriate dimensions. If the input parameters
+   *  have too many values, the last ones are discarded, and if
+   *  they do not have enough values, they are completed with 0.1
    */
   Parameters getParametersFromUser(const Parameters &user) const {
     Parameters res(modelFreeParameters());
@@ -200,4 +207,7 @@ struct RecModelInfo {
   bool isDated() const {
     return transferConstraint == TransferConstaint::RELDATED;
   }
+
 };
+
+

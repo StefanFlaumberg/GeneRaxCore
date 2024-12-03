@@ -67,7 +67,7 @@ public:
   struct Event {
     Event(): 
       type(ReconciliationEventType::EVENT_S), 
-      previous_event_type(ReconciliationEventType::EVENT_S), 
+      previousType(ReconciliationEventType::EVENT_S), 
       geneNode(INVALID_NODE_ID), 
       speciesNode(INVALID_NODE_ID), 
       destSpeciesNode(INVALID_NODE_ID),
@@ -78,7 +78,7 @@ public:
       pllLostSpeciesNode(nullptr)
     {}
     ReconciliationEventType type;
-    ReconciliationEventType previous_event_type;
+    ReconciliationEventType previousType;
     unsigned int geneNode;
     unsigned int speciesNode;
     unsigned int destSpeciesNode;     // for transfers only
@@ -111,7 +111,7 @@ public:
    * Default constructor
    */
   Scenario(): 
-    _last_event_type(ReconciliationEventType::EVENT_S),
+    _lastEventType(ReconciliationEventType::EVENT_S),
     _eventsCount(static_cast<unsigned int>(ReconciliationEventType::EVENT_Invalid), 0), 
     _geneRoot(nullptr), 
     _rootedTree(nullptr),
@@ -205,8 +205,8 @@ public:
 
 
   std::vector<corax_unode_t *> &getGeneNodeBuffer() {return _geneNodeBuffer;}
-  corax_unode_t *generateVirtualGeneRoot();
-  void generateGeneChildren(corax_unode_t *geneNode, 
+  corax_unode_t *generateGeneRoot();
+  void generateGeneChildren(corax_unode_t *geneNode,
       corax_unode_t *&leftGeneNode,
       corax_unode_t *&rightGeneNode);
 
@@ -220,15 +220,15 @@ public:
   static const unsigned int EVENT_TYPE_NUMBER;
 
   void setLastEventType(ReconciliationEventType type) {
-    _last_event_type = type;
+    _lastEventType = type;
   }
   ReconciliationEventType getLastEventType() const {
-    return _last_event_type;
+    return _lastEventType;
   }
 private:
   static const char *eventNames[];
+  ReconciliationEventType _lastEventType;
   std::vector<Event> _events;
-  ReconciliationEventType _last_event_type;
   std::vector<unsigned int> _eventsCount;
   std::vector<std::vector<Event> > _geneIdToEvents;
   corax_unode_t *_geneRoot;

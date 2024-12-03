@@ -1,12 +1,13 @@
 #pragma once
 
-#include <trees/PLLRootedTree.hpp>
 #include <vector>
+#include <trees/PLLRootedTree.hpp>
+
+
 
 class DatedTree {
 public:
   DatedTree(PLLRootedTree *rootedTree, bool fromBL = true);
-  
 
   void reorderFromBranchLengths();
   void rescaleBranchLengths();
@@ -15,7 +16,6 @@ public:
   const std::vector<corax_rnode_s *> &getOrderedSpeciations() const {return _orderedSpeciations;}
   unsigned int getRank(unsigned int nodeIndex) const {return _ranks[nodeIndex];}
   const std::vector<unsigned int> &getOrderedSpeciesRanks() const {return _ranks;}
-
 
   bool moveDown(unsigned int rank, bool force = false);
   bool moveUp(unsigned int rank, bool force = false);
@@ -31,25 +31,24 @@ public:
   Backup getBackup() {Backup backup; backup.ranks = _ranks; return backup;}
   void restore(const Backup &backup);
 
-  bool canTransferUnderRelDated(unsigned int nodeIndexFrom,
-      unsigned int nodeIndexTo) const;
+  bool canTransferUnderRelDated(unsigned int e, unsigned int d) const;
 
   void randomize();
 
   /**
-   *  hash value that characterizes the current order of the speciation events
-   *
+   *  Hash value that characterizes the current order of the speciation events
    */
   size_t getOrderingHash(size_t startingHash = 42) const;
+
 private:
   void updateRanksFromSpeciationOrders();
-  
+
   PLLRootedTree &_rootedTree;
- 
-  // internal nodes, from the root to the most recent speciation 
+  // internal nodes, from the root to the most recent speciation
   std::vector<corax_rnode_s *> _orderedSpeciations;
   // parents have always a lower rank than their children
   std::vector<unsigned int> _ranks;
+
 };
 
 

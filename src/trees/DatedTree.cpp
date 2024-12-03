@@ -1,13 +1,15 @@
 #include "DatedTree.hpp"
+
 #include <iostream>
 #include <IO/Logger.hpp>
 #include <maths/Random.hpp>
+
 
 DatedTree::DatedTree(PLLRootedTree *rootedTree, bool fromBL):
   _rootedTree(*rootedTree)
 {
   if (fromBL) {
-    _orderedSpeciations = _rootedTree.getOrderedSpeciations();  
+    _orderedSpeciations = _rootedTree.getOrderedSpeciations();
   } else {
     auto postOrder = rootedTree->getPostOrderNodes();
     for (auto it = postOrder.rbegin(); it != postOrder.rend(); ++it) {
@@ -19,32 +21,30 @@ DatedTree::DatedTree(PLLRootedTree *rootedTree, bool fromBL):
   }
   updateRanksFromSpeciationOrders();
 }
-  
+
 void DatedTree::reorderFromBranchLengths()
 {
   _orderedSpeciations = _rootedTree.getOrderedSpeciations();
   updateRanksFromSpeciationOrders();
 }
-  
+
 void DatedTree::updateRanksFromSpeciationOrders()
 {
   _ranks.resize(_rootedTree.getNodeNumber());
   unsigned int rank = 0;
   for (auto species: _orderedSpeciations) {
-    _ranks[species->node_index] = rank++; 
+    _ranks[species->node_index] = rank++;
   }
   for (auto leaf: this->_rootedTree.getLeaves()) {
     _ranks[leaf->node_index] = rank;
   }
 }
 
-
 void DatedTree::rescaleBranchLengths()
 {
   assert(isConsistent());
   std::vector<double> heights(_rootedTree.getNodeNumber(), 0.0);
   double height = 0.0;
-  
   for (auto node: _orderedSpeciations) {
     auto e = node->node_index;
     if (!node->parent) {
@@ -60,10 +60,9 @@ void DatedTree::rescaleBranchLengths()
     auto p = leaf->parent->node_index;
     leaf->length = height - double(_ranks[p]);
   }
-
 }
 
-bool DatedTree::moveUp(unsigned int rank, bool force) 
+bool DatedTree::moveUp(unsigned int rank, bool force)
 {
   if (rank == 0) {
     return false;
@@ -89,7 +88,7 @@ bool DatedTree::moveDown(unsigned int rank, bool force)
   _ranks[n2->node_index]--;
   return true;
 }
-  
+
 void DatedTree::moveNodeToRoot(corax_rnode_t *node)
 {
   auto e = node->node_index;
@@ -101,7 +100,7 @@ void DatedTree::moveNodeToRoot(corax_rnode_t *node)
   }
   assert(rank == _ranks[e]);
 }
- 
+
 bool DatedTree::isConsistent() const
 {
   // check that _orderedSpeciations and ranks are consistent
@@ -124,7 +123,7 @@ bool DatedTree::isConsistent() const
   }
   return true;
 }
-  
+
 void DatedTree::restore(const Backup &backup)
 {
   _ranks = backup.ranks;
@@ -135,11 +134,12 @@ void DatedTree::restore(const Backup &backup)
 }
 
 // taken from https://stackoverflow.com/a/27952689
-size_t hash_combine( size_t lhs, size_t rhs ) {
+size_t hash_combine( size_t lhs, size_t rhs )
+{
   lhs ^= rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2);
   return lhs;
 }
-  
+
 size_t DatedTree::getOrderingHash(size_t startingHash) const
 {
   std::hash<size_t> hash_fn;
@@ -149,17 +149,21 @@ size_t DatedTree::getOrderingHash(size_t startingHash) const
   }
   return hash;
 }
-  
-bool DatedTree::canTransferUnderRelDated(unsigned int nodeIndexFrom,
-      unsigned int nodeIndexTo) const
+
+bool DatedTree::canTransferUnderRelDated(unsigned int e,
+    unsigned int d) const
 {
-  // father of from is before to
-  auto from = _rootedTree.getNode(nodeIndexFrom);
-  if (!from->parent) {
+  // the destination species (d) should be younger than
+  // the parent of the source species (e)
+  if (d == e) {
+    return false;
+  }
+  auto srcSpeciesNode = _rootedTree.getNode(e);
+  if (!srcSpeciesNode->parent) {
     return true;
   }
-  auto parentFromIndex = from->parent->node_index;
-  return _ranks[parentFromIndex] <= _ranks[nodeIndexTo]; 
+  auto p = srcSpeciesNode->parent->node_index;
+  return _ranks[d] > _ranks[p];
 }
 
 void DatedTree::randomize()
