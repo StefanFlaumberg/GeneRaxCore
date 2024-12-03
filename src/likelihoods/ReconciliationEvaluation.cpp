@@ -1,18 +1,10 @@
-
 #include "ReconciliationEvaluation.hpp"
-#include <IO/Logger.hpp>
+
+#include <likelihoods/reconciliation_models/ParsimonyDModel.hpp>
 #include <likelihoods/reconciliation_models/SimpleDSModel.hpp>
 #include <likelihoods/reconciliation_models/UndatedDLModel.hpp>
 #include <likelihoods/reconciliation_models/UndatedDTLModel.hpp>
-#include <likelihoods/reconciliation_models/ParsimonyDModel.hpp>
-#include <likelihoods/reconciliation_models/BaseReconciliationModel.hpp>
-#include <cmath>
-#include <IO/FileSystem.hpp>
 
-double log(ScaledValue v) 
-{
-  return v.getLogValue();
-}
 
 
 ReconciliationEvaluation::ReconciliationEvaluation(PLLRootedTree  &speciesTree,

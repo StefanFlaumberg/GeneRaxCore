@@ -205,13 +205,13 @@ void Scenario::savePerSpeciesEventsCounts(const std::string &filename, bool mast
         eventCount[0]++;
         eventCount[4] = 1;
         eventCount[6]++;
-        if (is_speciation_event(event.previous_event_type)) eventCount[7]++; 
+        if (is_speciation_event(event.previousType)) eventCount[7]++; 
         break;
       case ReconciliationEventType::EVENT_SL: 
         eventCount[0]++;
         eventCount[4] = 1;
         eventCount[6]++;
-        if (is_speciation_event(event.previous_event_type)) eventCount[7]++; 
+        if (is_speciation_event(event.previousType)) eventCount[7]++; 
         // count the loss
         speciesToEventCount[event.pllLostSpeciesNode->label][2]++;
         break;
@@ -813,7 +813,7 @@ static void nextLink(corax_unode_t *n1, corax_unode_t *n2, corax_unode_t *n3)
   n3->next = n1;
 }
 
-corax_unode_t *Scenario::generateVirtualGeneRoot()
+corax_unode_t *Scenario::generateGeneRoot()
 {
   auto node1 = createNode(0);
   _geneNodeBuffer.push_back(node1);
@@ -821,7 +821,7 @@ corax_unode_t *Scenario::generateVirtualGeneRoot()
 }
 
 
-void Scenario::generateGeneChildren(corax_unode_t *geneNode, 
+void Scenario::generateGeneChildren(corax_unode_t *geneNode,
     corax_unode_t *&leftGeneNode,
     corax_unode_t *&rightGeneNode)
 {
