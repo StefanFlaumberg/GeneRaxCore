@@ -82,6 +82,7 @@ enum class ReconciliationEventType {
   EVENT_T,      // horizontal gene transfer
   EVENT_TL,     // horizontal gene transfer and loss
   EVENT_L,      // loss
+  EVENT_C,
   EVENT_None,   // no event
   EVENT_Invalid // invalid event
 };

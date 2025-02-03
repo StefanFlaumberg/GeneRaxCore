@@ -167,6 +167,7 @@ static bool readTrees(const std::string &inputFile,
 // for each weighted tree, also stores its node in post order
 static void extractClades(const WeightedTrees &weightedTrees,
     const std::unordered_map<std::string, unsigned int> &leafToId,
+    std::vector<CID> &idToCID,
     CladeToCID &cladeToCID,
     CIDToClade &cidToClade,
     CIDToLeaf &cidToLeaf,
@@ -217,16 +218,19 @@ static void extractClades(const WeightedTrees &weightedTrees,
   // clade always comes after its child clades in the CID ordering 
   for (auto it = orderedClades.begin(); it != orderedClades.end(); ++it) {
     auto &clade = *it;
-    unsigned int CID = cidToClade.size();
+    unsigned int cid = cidToClade.size();
     cidToClade.push_back(clade);
-    cladeToCID[clade] = CID;
+    cladeToCID[clade] = cid;
   }
   // so far we have only added the non-trivial clades. Now we add
   // the trivial clades 
+  idToCID.resize(leafNumber);
   for (auto pair: leafToId) {
     CCPClade clade(leafNumber, false);
     clade.set(pair.second);
-    cidToLeaf[cladeToCID[clade]] = pair.first;
+    unsigned int cid = cladeToCID[clade];
+    idToCID[pair.second] = cid;
+    cidToLeaf[cid] = pair.first;
   }
 }
 
@@ -507,8 +511,9 @@ void ConditionalClades::buildFromGeneTrees(const std::string &inputFile,
   
   std::vector<std::vector<corax_unode_t*> > postOrderNodes;
   // first pass to get all clades and assign them a CID
-  extractClades(weightedTrees, 
+  extractClades(weightedTrees,
       leafToId,
+      _idToCID,
       _cladeToCID,
       _CIDToClade,
       _CIDToLeaf,
@@ -649,6 +654,22 @@ unsigned int ConditionalClades::getRootsNumber() const
   return _allCladeSplits.back().size() / 2; 
 }
 
+CladeLeaves ConditionalClades::getCladeLeaves(CID cid) const
+{
+  CladeLeaves leaves;
+  if (isLeaf(cid)) {
+    leaves.push_back(cid);
+  } else {
+    auto clade = _CIDToClade.at(cid);
+    for (unsigned int i = 0; i < clade.size(); ++i) {
+      if (clade.get(i)) {
+        leaves.push_back(_idToCID[i]);
+      }
+    }
+  }
+  return leaves;
+}
+
 static void serializeUInt(unsigned int v,
     std::ostream &os)
 {
@@ -748,6 +769,11 @@ void ConditionalClades::serialize(const std::string &outputFile)
   for (const auto &str: _idToLeaf) {
     serializeString(str, os);
   }
+  // _idToCID
+  serializeUInt(_idToCID.size(), os);
+  for (const auto cid: _idToCID) {
+    serializeUInt(cid, os);
+  }
   // _CIDToLeaf
   serializeUInt(_CIDToLeaf.size(), os);
   for (auto it: _CIDToLeaf) {
@@ -784,6 +810,11 @@ void ConditionalClades::unserialize(const std::string &inputFile)
   _idToLeaf.resize(unserializeUInt(is));
   for (unsigned int i = 0; i < _idToLeaf.size(); ++i) {
     _idToLeaf[i] = unserializeString(is);
+  }
+  // _idToCID
+  _idToCID.resize(unserializeUInt(is));
+  for (unsigned int i = 0; i < _idToCID.size(); ++i) {
+    _idToCID[i] = unserializeUInt(is);
   }
   // _CIDToLeaf
   auto cidToLeafSize = unserializeUInt(is);

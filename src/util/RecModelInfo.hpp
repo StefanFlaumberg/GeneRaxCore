@@ -40,9 +40,17 @@ struct RecModelInfo {
   bool noDup;
   // disable DL and TL inference to speed up likelihood evaluation
   bool noVirtualEvents;
+  // global probability of a gene copy to be not lost if not
+  // observed in the data
+  double fractionMissing;
   // path to a file which sets for each species the probability of
   // a gene copy to be not lost if not observed in the data
   std::string fractionMissingFile;
+  // global probability of a gene copy to be a contaminant
+  double fractionContaminating;
+  // path to a file which sets for each species the probability of
+  // a gene copy to be a contaminant
+  std::string fractionContaminatingFile;
   // use less RAM, but likelihood evaluation might be slower
   // (specific to AleRax)
   bool memorySavings;
@@ -64,6 +72,8 @@ struct RecModelInfo {
     transferConstraint(TransferConstaint::PARENTS),
     noDup(false),
     noVirtualEvents(false),
+    fractionMissing(0.0),
+    fractionContaminating(0.0),
     memorySavings(false)
   {}
 
@@ -83,7 +93,10 @@ struct RecModelInfo {
       TransferConstaint transferConstraint,
       bool noDup,
       bool noVirtualEvents,
+      double fractionMissing,
       const std::string &fractionMissingFile,
+      double fractionContaminating,
+      const std::string &fractionContaminatingFile,
       bool memorySavings):
     model(model),
     recOpt(recOpt),
@@ -98,7 +111,10 @@ struct RecModelInfo {
     transferConstraint(transferConstraint),
     noDup(noDup),
     noVirtualEvents(noVirtualEvents),
+    fractionMissing(fractionMissing),
     fractionMissingFile(fractionMissingFile),
+    fractionContaminating(fractionContaminating),
+    fractionContaminatingFile(fractionContaminatingFile),
     memorySavings(memorySavings)
   {}
 

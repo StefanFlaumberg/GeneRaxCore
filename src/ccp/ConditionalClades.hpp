@@ -42,28 +42,28 @@ struct CladeSplit {
   {}
 };
 using CladeSplits = std::vector<CladeSplit>;
+using CladeLeaves = std::vector<CID>;
 
 
 
 /**
- * Conditional clade representation of distribution of gene trees,
- * used to compute conditional clade probabilities.
+ *  Conditional clade representation of distribution of gene trees,
+ *  used to compute conditional clade probabilities.
  *
- * A clade is represented with a bitvector, in which each bit
- * corresponds to the presence/absence of a given taxon in the calde
+ *  A clade is represented with a bitvector, in which each bit
+ *  corresponds to the presence/absence of a given taxon in the calde
  *
- * The ID of a leaf/taxon corresponds to its index in the
- * bitvectors representing clades
+ *  The ID of a leaf/taxon corresponds to its index in the
+ *  bitvectors representing clades
  *
- * The CID is a unique identifier for a clade
+ *  The CID is a unique identifier for a clade
  *
- * A CladeSplit is a split of a clade into two child clades. Its
- * frequency corresponds to how often this clade is split into
- * those two child clades in the distribution of gene trees.
+ *  A CladeSplit is a split of a clade into two child clades. Its
+ *  frequency corresponds to how often this clade is split into
+ *  those two child clades in the distribution of gene trees.
  *
- * For each non-trivial clade we store a vector of CladeSplits,
- * whose frequencies should sum to one.
- *
+ *  For each non-trivial clade we store a vector of CladeSplits,
+ *  whose frequencies should sum to one.
  */
 class ConditionalClades {
 public:
@@ -86,6 +86,7 @@ public:
   std::string getLeafLabel(CID cid) const;
   const CIDToLeaf &getCidToLeaves() const {return _CIDToLeaf;}
   const CladeSplits &getCladeSplits(CID cid) const {return _allCladeSplits[cid];}
+  CladeLeaves getCladeLeaves(CID cid) const;
   bool skip() const {return false;}
   //bool skip() const {return  _uniqueInputTrees == _inputTrees;}
 
@@ -114,6 +115,7 @@ private:
   unsigned int _uniqueInputTrees;
   CCPRooting _ccpRooting;
   std::vector<std::string> _idToLeaf;
+  std::vector<CID> _idToCID;
   CIDToLeaf _CIDToLeaf;
   CIDToClade _CIDToClade;
   CladeToCID _cladeToCID;
