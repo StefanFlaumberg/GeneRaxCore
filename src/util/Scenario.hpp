@@ -97,7 +97,7 @@ public:
    * Default constructor
    */
   Scenario()
-      : _lastEventType(ReconciliationEventType::EVENT_S),
+      : _afterTransfer(false), _lastEventType(ReconciliationEventType::EVENT_S),
         _eventsCount(
             static_cast<unsigned int>(ReconciliationEventType::EVENT_Invalid),
             0),
@@ -203,11 +203,15 @@ public:
   corax_rnode_t *getOriginationSpecies() const;
   static const unsigned int EVENT_TYPE_NUMBER;
 
+  void setAfterTransfer(bool afterTransfer) { _afterTransfer = afterTransfer; }
+  bool isAfterTransfer() const { return _afterTransfer; }
+
   void setLastEventType(ReconciliationEventType type) { _lastEventType = type; }
   ReconciliationEventType getLastEventType() const { return _lastEventType; }
 
 private:
   static const char *eventNames[];
+  bool _afterTransfer;
   ReconciliationEventType _lastEventType;
   std::vector<Event> _events;
   std::vector<unsigned int> _eventsCount;
@@ -219,6 +223,7 @@ private:
   std::vector<corax_unode_t *> _geneNodeBuffer;
   typedef std::vector<std::vector<int>> ScenarioBlackList;
   std::unique_ptr<ScenarioBlackList> _blacklist;
+
   OrthoGroup *getLargestOrthoGroupRec(corax_unode_t *geneNode,
                                       bool isVirtualRoot) const;
   void getAllOrthoGroupRec(corax_unode_t *geneNode, OrthoGroups &orthogroups,
