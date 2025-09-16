@@ -64,7 +64,7 @@ public:
   /**
    *  ScaledValue sum operator
    */
-  ScaledValue operator+(const ScaledValue &v) const {
+  inline ScaledValue operator+(const ScaledValue &v) const {
     if (v.scaler == scaler) {
       return ScaledValue(v.value + value, scaler);
     } else if (v.scaler < scaler) {
@@ -77,7 +77,7 @@ public:
   /**
    *  ScaledValue sum operator
    */
-  ScaledValue &operator+=(const ScaledValue &v) {
+  inline ScaledValue &operator+=(const ScaledValue &v) {
     if (v.scaler == scaler) {
       value += v.value;
     } else if (v.scaler < scaler) {
@@ -90,7 +90,7 @@ public:
   /**
    *  ScaledValue minus operator
    */
-  ScaledValue operator-(const ScaledValue &v) const {
+  inline ScaledValue operator-(const ScaledValue &v) const {
     if (v.scaler == scaler) {
       if (value - v.value < 0.0) {
         if (fabs(value - v.value) < 0.0000000001) {
@@ -105,7 +105,7 @@ public:
       return res;
     } else if (v.scaler < scaler) {
       std::cerr << *this << " - " << v << std::endl;
-      assert(false); // we do not allow negative values for now
+      assert(false); // negative values not allowed
       return v;
     } else {
       return *this;
@@ -115,7 +115,7 @@ public:
   /**
    *  ScaledValue multiplication operator
    */
-  ScaledValue operator*(const ScaledValue &v) const {
+  inline ScaledValue operator*(const ScaledValue &v) const {
     auto res = ScaledValue(v.value * value, v.scaler + scaler);
     return res;
   }
@@ -123,7 +123,7 @@ public:
   /**
    *  ScaledValue multiplication operator
    */
-  ScaledValue &operator*=(const ScaledValue &v) {
+  inline ScaledValue &operator*=(const ScaledValue &v) {
     value *= v.value;
     scaler += v.scaler;
     return *this;
@@ -132,7 +132,7 @@ public:
   /**
    *  double multiplication operator
    */
-  ScaledValue operator*(double v) const {
+  inline ScaledValue operator*(double v) const {
     auto res = ScaledValue(v * value, scaler);
     return res;
   }
@@ -140,7 +140,7 @@ public:
   /**
    *  double multiplication operator
    */
-  ScaledValue &operator*=(double v) {
+  inline ScaledValue &operator*=(double v) {
     value *= v;
     return *this;
   }
@@ -148,7 +148,7 @@ public:
   /**
    *  double division operator
    */
-  ScaledValue operator/(double v) const {
+  inline ScaledValue operator/(double v) const {
     auto res = ScaledValue(value / v, scaler);
     return res;
   }
@@ -156,7 +156,7 @@ public:
   /**
    *  double division operator
    */
-  ScaledValue &operator/=(double v) {
+  inline ScaledValue &operator/=(double v) {
     value /= v;
     return *this;
   }
@@ -164,12 +164,15 @@ public:
   /**
    *  @return true if the value is 0
    */
-  bool isNull() const { return value == 0.0; }
+  inline bool isNull() const {
+    assert(value >= 0.0); // negative values not allowed
+    return value == 0.0;
+  }
 
   /**
    *  Comparison with ScaledValue operators
    */
-  bool operator<(const ScaledValue &v) const {
+  inline bool operator<(const ScaledValue &v) const {
     if (isNull()) {
       return !v.isNull();
     }
@@ -179,18 +182,18 @@ public:
     return value < v.value;
   }
 
-  bool operator>(const ScaledValue &v) const { return !((*this) <= v); }
+  inline bool operator>(const ScaledValue &v) const { return !(*this <= v); }
 
-  bool operator==(const ScaledValue &v) const {
+  inline bool operator==(const ScaledValue &v) const {
     if (isNull()) {
       return v.isNull();
     }
     return (scaler == v.scaler) && (value == v.value);
   }
 
-  bool operator!=(const ScaledValue &v) const { return !(*this == v); }
+  inline bool operator!=(const ScaledValue &v) const { return !(*this == v); }
 
-  bool operator<=(const ScaledValue &v) const {
+  inline bool operator<=(const ScaledValue &v) const {
     if (isNull()) {
       return true;
     }
@@ -200,7 +203,7 @@ public:
     return value <= v.value;
   }
 
-  bool operator>=(const ScaledValue &v) const { return !(*this < v); }
+  inline bool operator>=(const ScaledValue &v) const { return !(*this < v); }
 
   /**
    *  std::ofstream operator
@@ -217,6 +220,7 @@ public:
   }
 
   void scale() {
+    assert(value >= 0.0); // negative values not allowed
     if (value < JS_SCALE_THRESHOLD) {
       scaler += 1;
       value *= JS_SCALE_FACTOR;
@@ -236,6 +240,8 @@ template <class REAL> void scale(REAL &) {}
 
 /**
  *  scale function for the ScaledValue type
+ *  Should be applied every time when converting from a double
+ *  or after a series of multiplication and/or division operations
  */
 template <> inline void scale<ScaledValue>(ScaledValue &v) { v.scale(); }
 
