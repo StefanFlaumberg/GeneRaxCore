@@ -305,12 +305,12 @@ void PLLRootedTree::ensureUniqueLabels(
     }
     anyLeafLabel[node->node_index] = anyLeafLabel[node->left->node_index];
     // check the node and the node label
+    auto label = (node->label) ? std::string(node->label) : "";
     bool isInvalid = nodesToInvalidate && (nodesToInvalidate->end() !=
                                            nodesToInvalidate->find(node));
-    auto label = (node->label) ? std::string(node->label) : "";
-    bool isEmptyOrDuplicate = (seenLabels.end() != seenLabels.find(label));
-    bool isNumeric = isFloat(label);
-    if (isInvalid || isEmptyOrDuplicate || isNumeric) {
+    isInvalid |= (seenLabels.end() != seenLabels.find(label));
+    isInvalid |= isFloat(label);
+    if (isInvalid) {
       // we need to assign a new label
       unsigned int index = 0; // against collisions with a similar user label
       std::string prefix = "Node_";

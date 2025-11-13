@@ -16,12 +16,7 @@ void BaseReconciliationModel::onSpeciesTreeChange(
     _allSpeciesNodesInvalid = true;
   } else {
     assert(nodesToInvalidate->size());
-    for (auto speciesNode : *nodesToInvalidate) {
-      while (speciesNode) {
-        _invalidatedSpeciesNodes.insert(speciesNode);
-        speciesNode = speciesNode->parent;
-      }
-    }
+    _invalidatedSpeciesNodes = *nodesToInvalidate;
   }
   _allSpeciesNodes.clear();
   fillNodesPostOrder(_speciesTree.getRoot(), _allSpeciesNodes);

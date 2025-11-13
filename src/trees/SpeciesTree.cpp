@@ -84,8 +84,6 @@ void SpeciesTreeOperator::changeRoot(SpeciesTree &speciesTree,
   auto B = rootLeft->right;
   auto C = rootRight->left;
   auto D = rootRight->right;
-  std::unordered_set<corax_rnode_t *> nodesToInvalidate;
-  nodesToInvalidate.insert(root);
   auto &datedTree = speciesTree.getDatedTree();
   setRootAux(speciesTree, left1 ? rootLeft : rootRight);
   if (left1 && left2) {
@@ -111,6 +109,10 @@ void SpeciesTreeOperator::changeRoot(SpeciesTree &speciesTree,
     PLLRootedTree::setSon(root, rootLeft, false);
     datedTree.moveNodeToRoot(rootRight);
   }
+  // account for the changes made
+  std::unordered_set<corax_rnode_t *> nodesToInvalidate;
+  nodesToInvalidate.insert(root);
+  nodesToInvalidate.insert(root->parent);
   speciesTree.onSpeciesTreeChange(&nodesToInvalidate);
 }
 
@@ -153,12 +155,11 @@ unsigned int SpeciesTreeOperator::applySPRMove(SpeciesTree &speciesTree,
   assert(pruneFatherNode);
   auto pruneGrandFatherNode = pruneFatherNode->parent;
   auto pruneBrotherNode = getBrother(pruneNode);
-  unsigned int res = pruneBrotherNode->node_index;
-  std::unordered_set<corax_rnode_t *> nodesToInvalidate;
+  std::vector<corax_rnode_t *> affectedNodes;
   // prune
-  nodesToInvalidate.insert(pruneFatherNode);
+  affectedNodes.push_back(pruneFatherNode);
   if (pruneGrandFatherNode) {
-    nodesToInvalidate.insert(pruneGrandFatherNode);
+    affectedNodes.push_back(pruneGrandFatherNode);
     PLLRootedTree::setSon(pruneGrandFatherNode, pruneBrotherNode,
                           pruneGrandFatherNode->left == pruneFatherNode);
   } else {
@@ -173,14 +174,23 @@ unsigned int SpeciesTreeOperator::applySPRMove(SpeciesTree &speciesTree,
     PLLRootedTree::setSon(pruneFatherNode, regraftNode,
                           pruneFatherNode->left != pruneNode);
   } else {
+    affectedNodes.push_back(regraftParentNode);
     PLLRootedTree::setSon(regraftParentNode, pruneFatherNode,
                           regraftParentNode->left == regraftNode);
     PLLRootedTree::setSon(pruneFatherNode, regraftNode,
                           pruneFatherNode->left != pruneNode);
-    nodesToInvalidate.insert(regraftParentNode);
+  }
+  // account for the changes made
+  std::unordered_set<corax_rnode_t *> nodesToInvalidate;
+  for (auto node : affectedNodes) {
+    while (node) {
+      nodesToInvalidate.insert(node);
+      node = node->parent;
+    }
   }
   speciesTree.onSpeciesTreeChange(&nodesToInvalidate);
-  return res;
+  // return info for a rollback
+  return pruneBrotherNode->node_index;
 }
 
 void SpeciesTreeOperator::reverseSPRMove(SpeciesTree &speciesTree,
