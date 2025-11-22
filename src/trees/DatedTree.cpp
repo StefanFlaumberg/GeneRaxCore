@@ -139,6 +139,26 @@ size_t DatedTree::getOrderingHash(size_t startingHash) const {
   return hash;
 }
 
+bool DatedTree::canTransfer(unsigned int e, unsigned int d,
+                            TransferConstaint transferConstraint) {
+  switch (transferConstraint) {
+  case TransferConstaint::NONE:
+    return d != e;
+  case TransferConstaint::PARENTS:
+    return !_rootedTree.isAncestorOf(d, e);
+  case TransferConstaint::RELDATED:
+    // the destination species (d) should be younger than
+    // the parent of the source species (e)
+    if (_rootedTree.getParent(e)) {
+      auto p = _rootedTree.getParent(e)->node_index;
+      return (d != e) && (_ranks[d] > _ranks[p]);
+    }
+    return d != e;
+  }
+  assert(false);
+  return false;
+}
+
 bool DatedTree::canTransferUnderRelDated(unsigned int e, unsigned int d) const {
   // the destination species (d) should be younger than
   // the parent of the source species (e)

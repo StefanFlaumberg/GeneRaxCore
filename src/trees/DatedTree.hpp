@@ -40,6 +40,9 @@ public:
   }
   void restore(const Backup &backup);
 
+  bool canTransfer(unsigned int e, unsigned int d,
+                   TransferConstaint transferConstraint);
+
   bool canTransferUnderRelDated(unsigned int e, unsigned int d) const;
 
   void randomize();
