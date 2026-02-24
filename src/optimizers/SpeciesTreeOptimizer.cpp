@@ -10,6 +10,7 @@
 #include <search/SpeciesTransferSearch.hpp>
 #include <support/ICCalculator.hpp>
 #include <util/Paths.hpp>
+#include <util/utils.hpp>
 
 static std::unique_ptr<SpeciesTree>
 makeSpeciesTree(const std::string &speciesTreeFile,

@@ -70,9 +70,9 @@ public:
   /**
    *  Concatenate vectors of different sizes
    */
-  static void
-  concatenateHeterogeneousUIntVectors(const std::vector<unsigned int> &localVector,
-                                      std::vector<unsigned int> &globalVector);
+  static void concatenateHeterogeneousUIntVectors(
+      const std::vector<unsigned int> &localVector,
+      std::vector<unsigned int> &globalVector);
   static void
   concatenateHeterogeneousDoubleVectors(const std::vector<double> &localVector,
                                         std::vector<double> &globalVector);
@@ -140,6 +140,7 @@ private:
     }
     virtual ~ParallelException() {}
     virtual const char *what() const noexcept { return msg_.c_str(); }
+
   private:
     std::string msg_;
   };
