@@ -13,11 +13,11 @@
 
 static std::unique_ptr<SpeciesTree>
 makeSpeciesTree(const std::string &speciesTreeFile,
-                const Families &initialFamilies) {
+                const Families &initialFamilies, bool isDated) {
   if (speciesTreeFile == "random") {
     return std::make_unique<SpeciesTree>(initialFamilies);
   } else {
-    return std::make_unique<SpeciesTree>(speciesTreeFile);
+    return std::make_unique<SpeciesTree>(speciesTreeFile, true, isDated);
   }
 }
 
@@ -26,7 +26,8 @@ SpeciesTreeOptimizer::SpeciesTreeOptimizer(
     const RecModelInfo &recModelInfo, const Parameters &startingRates,
     bool userDTLRates, const std::string &outputDir,
     const SpeciesTreeSearchParams &searchParams)
-    : _speciesTree(makeSpeciesTree(speciesTreeFile, initialFamilies)),
+    : _speciesTree(makeSpeciesTree(speciesTreeFile, initialFamilies,
+                                   recModelInfo.isDated())),
       _geneTrees(std::make_unique<PerCoreGeneTrees>(initialFamilies, true)),
       _initialFamilies(initialFamilies), _outputDir(outputDir),
       _firstOptimizeRatesCall(true), _userDTLRates(userDTLRates),
@@ -214,6 +215,12 @@ void SpeciesTreeOptimizer::updateEvaluations() {
   _evaluator.init(_evaluations, *_geneTrees, _modelRates,
                   _modelRates.info.rootedGeneTree,
                   _modelRates.info.pruneSpeciesTree, _userDTLRates);
+}
+
+void SpeciesTreeOptimizer::onSpeciesDatesChange() {
+  for (auto &evaluation : _evaluations) {
+    evaluation->onSpeciesDatesChange();
+  }
 }
 
 void SpeciesTreeOptimizer::onSpeciesTreeChange(
