@@ -239,7 +239,7 @@ std::string getCladesSetPath(const std::string &outputDir, int rank) {
 void SpeciesTreeOptimizer::_computeAllGeneClades() {
   ParallelContext::barrier();
   // Compute local clades
-  auto speciesLabelToInt = _speciesTree->getTree().getLabelToIntMap();
+  auto speciesLabelToInt = _speciesTree->getTree().getLeafLabelToId();
   CladeSet allClades;
   for (auto &tree : _geneTrees->getTrees()) {
     auto cladesSet =

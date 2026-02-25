@@ -260,8 +260,10 @@ std::string PLLRootedTree::getNewickString() const {
 }
 
 void PLLRootedTree::setMissingBranchLengths(double minBL) {
+  if (minBL < 0.0)
+    return;
   for (auto node : getNodes()) {
-    if (0.0 == node->length) {
+    if (node->length <= 0.0) {
       node->length = minBL;
     }
   }
@@ -453,8 +455,8 @@ corax_rtree_t *PLLRootedTree::buildRandomTree(
   return res;
 }
 
-StringToUintMap PLLRootedTree::getLabelToIntMap() {
-  StringToUintMap map;
+StringToUint PLLRootedTree::getLeafLabelToId() const {
+  StringToUint map;
   for (auto node : getLeaves()) {
     map.insert({std::string(node->label), node->node_index});
   }
@@ -756,6 +758,7 @@ struct DatedNode {
 
 static void fillDatedNodesRec(corax_rnode_t *node, double depth,
                               std::vector<DatedNode> &datedNodes) {
+  assert(node->length > 0.0);
   if (!node->left) {
     datedNodes.push_back(DatedNode(node));
   } else {

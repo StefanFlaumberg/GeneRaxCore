@@ -49,7 +49,7 @@ Clade Clade::getComplement(Clade &allTaxa) {
 
 Clade Clade::getMaximumClade(PLLRootedTree &tree) {
   Clade clade;
-  for (auto &p : tree.getLabelToIntMap()) {
+  for (auto &p : tree.getLeafLabelToId()) {
     clade._ids.insert(p.second);
   }
   clade._recomputeHash();

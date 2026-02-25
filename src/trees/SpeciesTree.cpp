@@ -9,13 +9,13 @@
 
 static std::unordered_set<std::string>
 getLabelsFromFamilies(const Families &families) {
-  GeneSpeciesMapping mappings;
-  for (const auto &family : families) {
-    mappings.fill(family.mappingFile, family.startingGeneTree);
-  }
   std::unordered_set<std::string> leafLabels;
-  for (const auto &mapping : mappings.getMap()) {
-    leafLabels.insert(mapping.second);
+  for (const auto &family : families) {
+    GeneSpeciesMapping mapping;
+    mapping.fill(family.mappingFile, family.startingGeneTree);
+    for (const auto &p : mapping.getMap()) {
+      leafLabels.insert(p.second);
+    }
   }
   return leafLabels;
 }
