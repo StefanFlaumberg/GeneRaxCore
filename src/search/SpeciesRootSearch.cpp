@@ -34,8 +34,8 @@ static void rootSearchAux(SpeciesTree &speciesTree,
     ll = evaluator.computeLikelihood(&perFamLL);
     if (treePerFamLLVec) {
       PerFamLL globalPerFamLL;
-      ParallelContext::concatenateHetherogeneousDoubleVectors(perFamLL,
-                                                              globalPerFamLL);
+      ParallelContext::concatenateHeterogeneousDoubleVectors(perFamLL,
+                                                             globalPerFamLL);
       auto newick = speciesTree.toString();
       treePerFamLLVec->push_back({newick, globalPerFamLL});
     }
@@ -77,8 +77,8 @@ double SpeciesRootSearch::rootSearch(
   if (treePerFamLLVec) {
     treePerFamLLVec->clear();
     PerFamLL globalPerFamLL;
-    ParallelContext::concatenateHetherogeneousDoubleVectors(perFamLL,
-                                                            globalPerFamLL);
+    ParallelContext::concatenateHeterogeneousDoubleVectors(perFamLL,
+                                                           globalPerFamLL);
     auto newick = speciesTree.toString();
     treePerFamLLVec->push_back({newick, globalPerFamLL});
   }
