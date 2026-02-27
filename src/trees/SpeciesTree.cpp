@@ -131,8 +131,7 @@ void SpeciesTreeOperator::changeRoot(SpeciesTree &speciesTree,
   auto newRoot = root->parent;
   auto &datedTree = speciesTree.getDatedTree();
   if (datedTree.isDated()) {
-    while (datedTree.moveUp(datedTree.getRank(newRoot)))
-      ; // move newRoot rank
+    while (datedTree.moveUp(datedTree.getRank(newRoot))); // move newRoot rank
   } else {
     datedTree.updateSpeciationOrderAndRanks(); // get ranks from topology
   }
