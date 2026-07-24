@@ -13,7 +13,9 @@ public:
   SpeciesTree(const std::unordered_set<std::string> &labels);
   SpeciesTree(const Families &families);
 
-  // forbid copy
+  ~SpeciesTree() = default;
+
+  // forbid copy and move
   SpeciesTree(const SpeciesTree &) = delete;
   SpeciesTree &operator=(const SpeciesTree &) = delete;
   SpeciesTree(SpeciesTree &&) = delete;
@@ -29,6 +31,9 @@ public:
     return _speciesTree.getNode(nodeIndex);
   }
 
+  size_t getHash() const { return _speciesTree.getTreeHash(); }
+  size_t getNodeIndexHash() const { return _speciesTree.getTreeHash(false); }
+
   const PLLRootedTree &getTree() const { return _speciesTree; }
   const DatedTree &getDatedTree() const { return _datedTree; }
   PLLRootedTree &getTree() { return _speciesTree; }
@@ -36,12 +41,9 @@ public:
 
   void getLabelToId(StringToUint &labelToId) const;
 
-  size_t getHash() const;
-  size_t getNodeIndexHash() const;
-
   class Listener {
   public:
-    virtual ~Listener() {}
+    virtual ~Listener() = default;
     virtual void onSpeciesDatesChange() = 0;
     virtual void onSpeciesTreeChange(
         const std::unordered_set<corax_rnode_t *> *nodesToInvalidate) = 0;
