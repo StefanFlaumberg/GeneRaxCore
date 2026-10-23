@@ -21,6 +21,7 @@ set(generaxcore_SOURCES
   IO/FamiliesFileParser.cpp
   IO/LibpllParsers.cpp
   IO/ReconciliationWriter.cpp
+  IO/SpeciesConstraintParser.cpp
   likelihoods/LibpllEvaluation.cpp
   likelihoods/ReconciliationEvaluation.cpp
   likelihoods/reconciliation_models/BaseReconciliationModel.cpp

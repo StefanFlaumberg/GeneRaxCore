@@ -139,6 +139,13 @@ public:
   void ensureUniqueLabels(
       const std::unordered_set<corax_rnode_t *> *nodesToInvalidate = nullptr);
 
+  void setFixedClades(const std::vector<std::string> &speciesToFixedCladeLabel);
+  std::unordered_set<std::string> getFixedCladeLabels() const;
+  bool hasFixedClades() const { return !_speciesToFixedCladeLabel.empty(); }
+
+  void moveFixedCladeLabel(corax_rnode_t *from, corax_rnode_t *to);
+  bool isFixedClade(corax_rnode_t *node) const;
+
   /**
    *  Direct access to the libpll structure
    */
@@ -243,6 +250,8 @@ private:
     std::vector<std::vector<bool>> ancestors;
   };
   std::unique_ptr<LCACache> _lcaCache;
+
+  std::vector<std::string> _speciesToFixedCladeLabel;
 
   static corax_rtree_t *
   buildRandomTree(const std::unordered_set<std::string> &leafLabels);

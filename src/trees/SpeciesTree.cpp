@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 
+#include <IO/SpeciesConstraintParser.hpp>
 #include <parallelization/ParallelContext.hpp>
 
 SpeciesTree::SpeciesTree(const std::string &str, bool isFile, bool useBLs)
@@ -32,6 +33,21 @@ void SpeciesTree::getLabelToId(StringToUint &labelToId) const {
   for (auto node : getTree().getNodes()) {
     labelToId[std::string(node->label)] = node->node_index;
   }
+}
+
+void SpeciesTree::initFixedClades(const std::string &speciesConstraintFile) {
+  assert(!getTree().hasFixedClades());
+  std::vector<std::string> speciesToFixedCladeLabel;
+  if (speciesConstraintFile == "__allfixed__") {
+    speciesToFixedCladeLabel.resize(getTree().getNodeNumber());
+    for (auto node : getTree().getInnerNodes()) { // leaves can be ignored
+      speciesToFixedCladeLabel[node->node_index] = std::string(node->label);
+    }
+  } else if (speciesConstraintFile.size()) {
+    speciesToFixedCladeLabel =
+        SpeciesConstraintParser::parse(speciesConstraintFile, getTree());
+  }
+  getTree().setFixedClades(speciesToFixedCladeLabel);
 }
 
 void SpeciesTree::addListener(Listener *listener) {
@@ -76,7 +92,16 @@ bool SpeciesTreeOperator::canChangeRoot(const SpeciesTree &speciesTree,
   assert(direction < 4);
   auto root = speciesTree.getRoot();
   auto newRoot = (direction % 2) ? root->left : root->right;
-  return newRoot->left && newRoot->right;
+  // check newRoot is not a leaf
+  if (!newRoot->left || !newRoot->right) {
+    return false;
+  }
+  // check newRoot is not a fixed clade
+  if (speciesTree.getTree().isFixedClade(newRoot)) {
+    return false;
+  }
+  // passed all checks
+  return true;
 }
 
 void SpeciesTreeOperator::changeRoot(SpeciesTree &speciesTree,
@@ -129,6 +154,11 @@ void SpeciesTreeOperator::changeRoot(SpeciesTree &speciesTree,
   } else {
     datedTree.updateSpeciationOrderAndRanks(); // get ranks from topology
   }
+  auto &rootedTree = speciesTree.getTree();
+  if (rootedTree.isFixedClade(root)) {
+    // now it is newRoot that represents the total tree clade
+    rootedTree.moveFixedCladeLabel(root, newRoot);
+  }
   speciesTree.onSpeciesTreeChange(&nodesToInvalidate);
 }
 
@@ -165,6 +195,29 @@ bool SpeciesTreeOperator::canApplySPRMove(SpeciesTree &speciesTree,
   if (speciesTree.getTree().isAncestorOf(prune, regraft)) {
     return false;
   }
+  // check prune and regraft are in the same fixed clade
+  if (speciesTree.getTree().hasFixedClades()) {
+    auto p = pruneNode;
+    auto r = regraftNode;
+    auto lca = speciesTree.getTree().getLCA(p, r);
+    p = p->parent;
+    while (p != lca) {
+      if (speciesTree.getTree().isFixedClade(p)) {
+        return false;
+      }
+      p = p->parent;
+    }
+    if (r != lca) {
+      r = r->parent;
+    }
+    while (r != lca) {
+      if (speciesTree.getTree().isFixedClade(r)) {
+        return false;
+      }
+      r = r->parent;
+    }
+  }
+  // passed all checks
   return true;
 }
 
@@ -173,12 +226,15 @@ unsigned int SpeciesTreeOperator::applySPRMove(SpeciesTree &speciesTree,
                                                unsigned int regraft) {
   assert(canApplySPRMove(speciesTree, prune, regraft));
   std::unordered_set<corax_rnode_t *> nodesToInvalidate;
+  // ensure LCA cache is inited prior to the move
+  speciesTree.getTree().getLCA(prune, regraft);
   // prune
   auto pruneNode = speciesTree.getNode(prune);
   auto pruneFatherNode = pruneNode->parent;
   assert(pruneFatherNode);
   auto pruneGrandFatherNode = pruneFatherNode->parent;
   auto pruneBrotherNode = getBrother(pruneNode);
+  auto pruneBrother = pruneBrotherNode->node_index;
   nodesToInvalidate.insert(pruneFatherNode);
   if (!pruneGrandFatherNode) { // prune is at the root
     setRootAux(speciesTree, pruneBrotherNode);
@@ -205,9 +261,22 @@ unsigned int SpeciesTreeOperator::applySPRMove(SpeciesTree &speciesTree,
   auto &datedTree = speciesTree.getDatedTree();
   assert(!datedTree.isDated());
   datedTree.updateSpeciationOrderAndRanks(); // get ranks from topology
+  auto &rootedTree = speciesTree.getTree();
+  if (rootedTree.isFixedClade(pruneFatherNode) &&
+      rootedTree.isAncestorOf(pruneBrother, regraft)) {
+    // prune has been moved inside the prune brother clade,
+    // now it is prune brother that represents the prune father clade
+    rootedTree.moveFixedCladeLabel(pruneFatherNode, pruneBrotherNode);
+  }
+  if (rootedTree.isFixedClade(regraftNode) &&
+      rootedTree.isAncestorOf(regraft, prune)) {
+    // prune has been moved right outside the regraft clade,
+    // now it is prune father that represents the regraft clade
+    rootedTree.moveFixedCladeLabel(regraftNode, pruneFatherNode);
+  }
   speciesTree.onSpeciesTreeChange(&nodesToInvalidate);
   // return info for a rollback
-  return pruneBrotherNode->node_index;
+  return pruneBrother;
 }
 
 void SpeciesTreeOperator::reverseSPRMove(SpeciesTree &speciesTree,

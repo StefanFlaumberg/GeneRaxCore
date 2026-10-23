@@ -303,8 +303,8 @@ void PLLRootedTree::ensureUniqueLabels(
       }
     }
   }
-  // add the leaf labels and the empty label to seenLabels
-  auto seenLabels = getLabels(true);
+  // add fixed clade labels and the empty label to seenLabels
+  auto seenLabels = getFixedCladeLabels();
   seenLabels.insert("");
   // the leftmost leaf label for each node
   std::vector<std::string> anyLeafLabel(getNodeNumber());
@@ -320,6 +320,7 @@ void PLLRootedTree::ensureUniqueLabels(
     bool isInvalid = (invalidatedNodes.end() != invalidatedNodes.find(node));
     isInvalid |= (seenLabels.end() != seenLabels.find(label));
     isInvalid |= isFloat(label);
+    isInvalid &= !isFixedClade(node);
     if (isInvalid) {
       // we need to assign a new label
       unsigned int index = 0; // against collisions with a similar user label
@@ -336,6 +337,46 @@ void PLLRootedTree::ensureUniqueLabels(
     // add the current node label to seenLabels
     seenLabels.insert(label);
   }
+}
+
+void PLLRootedTree::setFixedClades(
+    const std::vector<std::string> &speciesToFixedCladeLabel) {
+  assert(speciesToFixedCladeLabel.size() == 0 ||
+         speciesToFixedCladeLabel.size() == getNodeNumber());
+  _speciesToFixedCladeLabel = speciesToFixedCladeLabel;
+  // keep user-provided labels only for the fixed clades
+  std::unordered_set<corax_rnode_t *> nodesToInvalidate;
+  for (auto leaf : getLeaves()) {
+    nodesToInvalidate.insert(leaf);
+  }
+  ensureUniqueLabels(&nodesToInvalidate);
+}
+
+std::unordered_set<std::string> PLLRootedTree::getFixedCladeLabels() const {
+  std::unordered_set<std::string> fixedCladeLabels;
+  for (auto node : getNodes()) {
+    if (isFixedClade(node)) {
+      fixedCladeLabels.insert(std::string(node->label));
+    }
+  }
+  return fixedCladeLabels;
+}
+
+void PLLRootedTree::moveFixedCladeLabel(corax_rnode_t *from,
+                                        corax_rnode_t *to) {
+  assert(from != to);
+  assert(from->left && to->left);
+  assert(hasFixedClades());
+  auto fixedCladeLabel = _speciesToFixedCladeLabel[from->node_index];
+  _speciesToFixedCladeLabel[to->node_index] = fixedCladeLabel;
+  _speciesToFixedCladeLabel[from->node_index] = "";
+  setNodeLabel(to, fixedCladeLabel);
+  setNodeLabel(from, "");
+}
+
+bool PLLRootedTree::isFixedClade(corax_rnode_t *node) const {
+  return !node->left || (!_speciesToFixedCladeLabel.empty() &&
+                         !_speciesToFixedCladeLabel[node->node_index].empty());
 }
 
 void PLLRootedTree::labelRootedTree(const std::string &unlabelledNewickFile,

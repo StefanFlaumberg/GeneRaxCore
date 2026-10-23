@@ -195,6 +195,10 @@ bool SpeciesSearchCommon::veryLocalSearch(
   SpeciesTreeOperator::getPossibleRegrafts(speciesTree, prune, radius,
                                            regrafts);
   for (auto regraft : regrafts) {
+    // the check is needed here only for constrained species search
+    if (!SpeciesTreeOperator::canApplySPRMove(speciesTree, prune, regraft)) {
+      continue;
+    }
     if (testSPR(speciesTree, evaluator, searchState, prune, regraft)) {
       Logger::timed << "\tfound better* (LL=" << searchState.bestLL
                     << ", hash=" << speciesTree.getHash() << ")" << std::endl;

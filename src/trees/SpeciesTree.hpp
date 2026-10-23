@@ -41,6 +41,8 @@ public:
 
   void getLabelToId(StringToUint &labelToId) const;
 
+  void initFixedClades(const std::string &speciesConstraintFile);
+
   class Listener {
   public:
     virtual ~Listener() = default;
