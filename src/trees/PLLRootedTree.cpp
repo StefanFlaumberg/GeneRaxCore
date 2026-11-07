@@ -13,34 +13,26 @@
 #include <maths/Random.hpp>
 #include <parallelization/ParallelContext.hpp>
 
-static void *xmalloc(size_t size) {
-  void *t;
-  t = malloc(size);
-  return t;
-}
-
 static char *xstrdup(const char *s) {
   size_t len = strlen(s);
-  char *p = (char *)xmalloc(len + 1);
+  char *p = (char *)malloc(len + 1);
   return strcpy(p, s);
 }
 
 static void dealloc_data(corax_rnode_t *node, void (*cb_destroy)(void *)) {
   if (node->data) {
-    if (cb_destroy)
+    if (cb_destroy) {
       cb_destroy(node->data);
+    }
   }
 }
 
 void corax_rtree_destroy(corax_rtree_t *tree, void (*cb_destroy)(void *)) {
-  unsigned int i;
-  corax_rnode_t *node;
   /* deallocate all nodes */
-  for (i = 0; i < tree->tip_count + tree->inner_count; ++i) {
-    node = tree->nodes[i];
+  for (unsigned int i = 0; i < tree->tip_count + tree->inner_count; ++i) {
+    corax_rnode_t *node = tree->nodes[i];
     dealloc_data(node, cb_destroy);
-    if (node->label)
-      free(node->label);
+    free(node->label);
     free(node);
   }
   /* deallocate tree structure */
@@ -172,19 +164,17 @@ void PLLRootedTree::setSon(corax_rnode_t *parent, corax_rnode_t *newSon,
 static corax_rnode_t *createNode(const std::string &label,
                                  std::vector<corax_rnode_t *> &allNodes) {
   corax_rnode_t *node =
-      static_cast<corax_rnode_t *>(malloc(sizeof(corax_rnode_t)));
-  node->label = 0;
+      static_cast<corax_rnode_t *>(calloc(1, sizeof(corax_rnode_t)));
+  node->label = nullptr;
   if (label.size()) {
-    node->label = static_cast<char *>(calloc(label.size() + 1, sizeof(char)));
-    assert(node->label);
-    strcpy(node->label, label.c_str());
+    node->label = xstrdup(label.c_str());
   }
+  node->length = DEFAULT_SPECIES_BL;
   node->node_index = static_cast<unsigned int>(allNodes.size());
-  node->length = 0.1;
-  node->parent = 0;
-  node->left = 0;
-  node->right = 0;
-  node->data = 0;
+  node->left = nullptr;
+  node->right = nullptr;
+  node->parent = nullptr;
+  node->data = nullptr;
   allNodes.push_back(node);
   return node;
 }
@@ -192,9 +182,9 @@ static corax_rnode_t *createNode(const std::string &label,
 static void destroyNodeData(void *) {}
 
 void rtreeDestroy(corax_rtree_t *rtree) {
-  if (!rtree)
-    return;
-  corax_rtree_destroy(rtree, destroyNodeData);
+  if (rtree) {
+    corax_rtree_destroy(rtree, destroyNodeData);
+  }
 }
 
 static corax_rtree_t *buildRtree(const std::string &str, bool isFile) {
@@ -275,8 +265,7 @@ void PLLRootedTree::equalizeBranchLengths(double stdBL) {
 
 static void setNodeLabel(corax_rnode_t *node, const std::string &label) {
   free(node->label);
-  node->label = static_cast<char *>(malloc(sizeof(char) * (label.size() + 1)));
-  std::strcpy(node->label, label.c_str());
+  node->label = xstrdup(label.c_str());
 }
 
 void PLLRootedTree::setLabel(unsigned int nodeIndex, const std::string &label) {
@@ -419,7 +408,7 @@ corax_rtree_t *PLLRootedTree::buildRandomTree(
     leaves.insert(leaf);
   }
   std::vector<corax_rnode_t *> allNodes;
-  corax_rnode_t *root = 0;
+  corax_rnode_t *root = nullptr;
   for (auto &label : leaves) {
     if (allNodes.size() == 0) {
       root = createNode(label, allNodes);
@@ -438,10 +427,10 @@ corax_rtree_t *PLLRootedTree::buildRandomTree(
     setSon(parent, brother, randBool);
     setSon(parent, node, !randBool);
   }
-  auto res = static_cast<corax_rtree_t *>(malloc(sizeof(corax_rtree_t)));
+  auto res = static_cast<corax_rtree_t *>(calloc(1, sizeof(corax_rtree_t)));
   res->root = root;
   res->nodes = static_cast<corax_rnode_t **>(
-      malloc(sizeof(corax_rnode_t *) * allNodes.size()));
+      calloc(1, sizeof(corax_rnode_t *) * allNodes.size()));
   for (unsigned int i = 0; i < allNodes.size(); ++i) {
     res->nodes[i] = allNodes[i];
   }

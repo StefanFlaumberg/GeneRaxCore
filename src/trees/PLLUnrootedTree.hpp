@@ -10,6 +10,8 @@
 
 class PLLRootedTree;
 
+const double DEFAULT_GENE_BL = 0.1;
+
 using UnodePrinter = std::function<void(corax_unode_t *, std::stringstream &)>;
 void defaultUnodePrinter(corax_unode_t *node, std::stringstream &ss);
 
@@ -136,7 +138,7 @@ public:
   /**
    *  Replace non-positive branch lengths with stdBL
    */
-  void setMissingBranchLengths(double stdBL = 0.1);
+  void setMissingBranchLengths(double stdBL = DEFAULT_GENE_BL);
 
   size_t getUnrootedTreeHash() const;
   size_t getRootedTreeHash(corax_unode_t *root) const;

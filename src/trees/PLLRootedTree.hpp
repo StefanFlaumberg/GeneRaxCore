@@ -5,6 +5,8 @@
 #include <util/CArrayRange.hpp>
 #include <util/types.hpp>
 
+const double DEFAULT_SPECIES_BL = 1.0;
+
 /**
  *  Data types and functions not provided in coraxlib
  */
@@ -121,12 +123,12 @@ public:
   /**
    *  Replace non-positive branch lengths with stdBL
    */
-  void setMissingBranchLengths(double stdBL = 1.0);
+  void setMissingBranchLengths(double stdBL = DEFAULT_SPECIES_BL);
 
   /**
    *  Set all branch lengths to stdBL
    */
-  void equalizeBranchLengths(double stdBL = 1.0);
+  void equalizeBranchLengths(double stdBL = DEFAULT_SPECIES_BL);
 
   /**
    *  Change the label of the node indexed with nodeIndex

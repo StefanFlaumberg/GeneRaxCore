@@ -23,12 +23,18 @@ void defaultUnodePrinter(corax_unode_t *node, std::stringstream &ss) {
   ss << ":" << node->length;
 }
 
+static char *xstrdup(const char *s) {
+  size_t len = strlen(s);
+  char *p = (char *)malloc(len + 1);
+  return strcpy(p, s);
+}
+
 static void destroyNodeData(void *) {}
 
 void utreeDestroy(corax_utree_t *utree) {
-  if (!utree)
-    return;
-  corax_utree_destroy(utree, destroyNodeData);
+  if (utree) {
+    corax_utree_destroy(utree, destroyNodeData);
+  }
 }
 
 static corax_utree_t *buildUtree(const std::string &str, bool isFile) {
@@ -94,12 +100,10 @@ PLLUnrootedTree::buildWithOutgroupFromRooted(const PLLRootedTree &rootedTree,
                                            outgroup);
 }
 
-char *consensus_serialize(const corax_unode_t *node) {
-
+static char *consensus_serialize(const corax_unode_t *node) {
   std::string newick;
   assert(node->next != node);
   if (node->next) {
-
     auto data = static_cast<corax_consensus_data_t *>(node->data);
     if (data) {
       newick += std::to_string(data->support);
@@ -107,18 +111,14 @@ char *consensus_serialize(const corax_unode_t *node) {
   } else if (node->label) {
     newick += node->label;
   }
-  // we don't have the branch lengths
-  newick += ":0.1";
-  char *res = static_cast<char *>(malloc(sizeof(char) * (newick.size() + 1)));
-  res[newick.size()] = '\0';
-  memcpy(res, newick.c_str(), newick.size());
+  newick += ":0.1"; // set the default branch lengths
+  char *res = xstrdup(newick.c_str());
   return res;
 }
 
 static void setNodeLabel(corax_unode_t *node, const std::string &label) {
   free(node->label);
-  node->label = static_cast<char *>(malloc(sizeof(char) * (label.size() + 1)));
-  std::strcpy(node->label, label.c_str());
+  node->label = xstrdup(label.c_str());
 }
 
 void PLLUnrootedTree::setLabel(unsigned int nodeIndex,
@@ -870,10 +870,7 @@ void PLLUnrootedTree::ensureUniqueLabels() {
       while (labels.find(newLabel) != labels.end() || newLabel.size() == 0) {
         newLabel = prefix + std::to_string(i++);
       }
-      free(node->label);
-      node->label =
-          static_cast<char *>(malloc(sizeof(char) * (newLabel.size() + 1)));
-      std::strcpy(node->label, newLabel.c_str());
+      setNodeLabel(node, newLabel);
       labels.insert(newLabel);
     }
   }
